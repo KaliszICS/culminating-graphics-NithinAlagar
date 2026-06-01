@@ -6,7 +6,7 @@
 
         * Date Created: may 28th, 2026
 
-        * Date Last Modified: may 30th, 2026
+        * Date Last Modified: june 1st, 2026
 
         */
 
@@ -22,48 +22,64 @@ import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.event.EventHandler;
 import javafx.event.ActionEvent;
+import javafx.scene.shape.Rectangle;
 
 
-public class HelloFX extends Application implements EventHandler<ActionEvent>{
+public class HelloFX extends Application{
     
     @Override
-    public void start(Stage mainMenuStage) {
-        // String javaVersion = System.getProperty("java.version");
-        // String javafxVersion = System.getProperty("javafx.version");
-        // Label l = new Label("Hello, JavaFX " + javafxVersion + ", running on Java " + javaVersion + ".");
-        // Scene scene = new Scene(new StackPane(l), 640, 480);
-        // mainMenuStage.setScene(scene);
-        // mainMenuStage.show();
-
+    public void start(Stage mainGameStage) {
 
         // main menu
-        mainMenuStage.setTitle("Checkers");
+        mainGameStage.setTitle("Checkers");
         Button start = new Button("Start Game");
 
 
         Label gameDescription = new Label("Welcome to Pass-The-Device two player checkers! \n Click Start to play.");
-        Scene startMenu, mainGame, endScreen;
-
         HBox startMenuLayout = new HBox(20);
         startMenuLayout.getChildren().addAll(start, gameDescription);
+        Scene startMenu, mainGame, endScreen;
+        // Label playerTurn = new Label(playerToMove + " to move.");
+        // mainGame = new Scene(playerToMove, 500, 500);
         startMenu = new Scene(startMenuLayout, 500, 500);
+        mainGameStage.setScene(startMenu);
+        mainGameStage.show();
+
+        GridPane grid = new GridPane();
+        for (int row = 0; row < 8; row++){
+            for (int col = 0; col < 8; col++){
+                StackPane tile = new StackPane();
+                Rectangle color = new Rectangle(70, 70);
+                if ((col+row)%2 == 0){
+                    color.setFill(Color.WHITE);
+                } else {
+                    color.setFill(Color.BLACK);
+                }
+                tile.getChildren().add(color);
+                // Adding a piece if there is one
+                String pieceCode = board[col][row];
+                if (!pieceCode.equals("")){
+                    Label piece = new Label(board[col][row]);
+                
+                piece.setStyle("-fx-font-size: 40;");
+                tile.getChildren().add(piece);
+                }
+                grid.add(tile, row, col);
+            }
+        }
+        
         start.setOnAction(event -> {
             System.out.println("but...");
 
-            //mainMenuStage.setScene(mainGame);
+            mainGameStage.setScene(mainGame);
         });
+
+        
 
 
 
         // here we add everything together
         // Scene scene = new Scene(layout, 640, 480);
-        // mainMenuStage.setScene(scene);
-        // mainMenuStage.show();
-    }
-
-    @Override
-    public void handle(ActionEvent buttonclick) {
-       
     }
 
 
