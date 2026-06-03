@@ -28,6 +28,18 @@ import javafx.scene.input.MouseEvent;
 
 
 public class HelloFX extends Application{
+    String[][] board = {
+            {"", "⛀", "", "⛀", "", "⛀", "", "⛀"},
+            {"⛀", "", "⛀", "", "⛀", "", "⛀", ""},
+            {"", "⛀", "", "⛀", "", "⛀", "", "⛀"},
+            {"", "", "", "", "", "", "", ""},
+            {"", "", "", "", "", "", "", ""},
+            {"⛂", "", "⛂", "", "⛂", "", "⛂", ""},
+            {"", "⛂", "", "⛂", "", "⛂", "", "⛂"},
+            {"⛂", "", "⛂", "", "⛂", "", "⛂", ""}
+        };
+        StackPane[][] gridPaneTileArray = new StackPane[8][8];
+
     
     boolean pieceSelected = false;
     int selectedPieceX, selectedPieceY;
@@ -52,19 +64,6 @@ public class HelloFX extends Application{
         startMenu = new Scene(startMenuLayout, 500, 500);
         mainGameStage.setScene(startMenu);
         mainGameStage.show();
-        String[][] board = {
-            {"", "⛀", "", "⛀", "", "⛀", "", "⛀"},
-            {"⛀", "", "⛀", "", "⛀", "", "⛀", ""},
-            {"", "⛀", "", "⛀", "", "⛀", "", "⛀"},
-            {"", "", "", "", "", "", "", ""},
-            {"", "", "", "", "", "", "", ""},
-            {"⛂", "", "⛂", "", "⛂", "", "⛂", ""},
-            {"", "⛂", "", "⛂", "", "⛂", "", "⛂"},
-            {"⛂", "", "⛂", "", "⛂", "", "⛂", ""}
-        };
-
-
-
 
         GridPane grid = new GridPane();
         for (int row = 0; row < 8; row++){
@@ -86,15 +85,20 @@ public class HelloFX extends Application{
                     Circle piece = new Circle(25, Color.WHITE);
                     tile.getChildren().add(piece);
                 }
-                grid.add(tile, row, col);
                 final int tileRow = row;
                 final int tileCol = col;
+                grid.add(tile, row, col);
+                gridPaneTileArray[row][col] = tile;
                 tile.setOnMousePressed(MouseEvent -> {
                     if (!pieceSelected && !board[tileCol][tileRow].equals("")) {
                         selectedPieceX = tileCol;
                         selectedPieceY = tileRow;
+                        pieceSelected = true;
                     } else {
-                        //movePiece(selectedPieceX, selectedPieceY, tileCol, tileRow);
+                        if (movePiece(selectedPieceX, selectedPieceY, tileCol, tileRow)){
+                            gridPaneTileArray[tileRow][tileCol].getChildren().add(gridPaneTileArray[selectedPieceY][selectedPieceX].getChildren().get(1));
+                            gridPaneTileArray[selectedPieceY][selectedPieceX].getChildren().remove(1);
+                        }
                         pieceSelected = false;
                     }
                 });
@@ -112,5 +116,8 @@ public class HelloFX extends Application{
     public static void main(String[] args) {
         launch(args);
     }
-
+    public static boolean movePiece(int selectedPieceX, int selectedPieceY, int moveToX, int moveToY){
+        return true;
+    }
 }
+
