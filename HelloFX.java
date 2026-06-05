@@ -28,7 +28,7 @@ import javafx.scene.input.MouseEvent;
 
 
 public class HelloFX extends Application{
-    String[][] board = {
+    static String[][] board = {
             {"", "⛀", "", "⛀", "", "⛀", "", "⛀"},
             {"⛀", "", "⛀", "", "⛀", "", "⛀", ""},
             {"", "⛀", "", "⛀", "", "⛀", "", "⛀"},
@@ -38,11 +38,12 @@ public class HelloFX extends Application{
             {"", "⛂", "", "⛂", "", "⛂", "", "⛂"},
             {"⛂", "", "⛂", "", "⛂", "", "⛂", ""}
         };
-        StackPane[][] gridPaneTileArray = new StackPane[8][8];
+    static StackPane[][] gridPaneTileArray = new StackPane[8][8];
 
     
-    boolean pieceSelected = false;
-    int selectedPieceX, selectedPieceY;
+    
+    static int selectedPieceX, selectedPieceY;
+    static boolean pieceSelected;
 
     @Override
     public void start(Stage mainGameStage) {
@@ -88,19 +89,22 @@ public class HelloFX extends Application{
                 final int tileRow = row;
                 final int tileCol = col;
                 grid.add(tile, row, col);
-                gridPaneTileArray[row][col] = tile;
+                gridPaneTileArray[col][row] = tile;
                 tile.setOnMousePressed(MouseEvent -> {
-                    if (!pieceSelected && !board[tileCol][tileRow].equals("")) {
-                        selectedPieceX = tileCol;
-                        selectedPieceY = tileRow;
+                    // Checking if a piece was already selected and if there is a piece actually there to select
+                    pieceSelected = false;
+                    // the x and y are swapped somewhere
+                    if (!pieceSelected && !board[tileRow][tileCol].equals("")) {
+                        selectedPieceX = tileRow;
+                        selectedPieceY = tileCol;
                         pieceSelected = true;
+                    } else if (moveValidity(selectedPieceX, selectedPieceY, tileRow, tileCol)){
+                            movePiece(selectedPieceX, selectedPieceY, tileRow, tileCol);
+                            pieceSelected = false;
                     } else {
-                        if (movePiece(selectedPieceX, selectedPieceY, tileCol, tileRow)){
-                            gridPaneTileArray[tileRow][tileCol].getChildren().add(gridPaneTileArray[selectedPieceY][selectedPieceX].getChildren().get(1));
-                            gridPaneTileArray[selectedPieceY][selectedPieceX].getChildren().remove(1);
-                        }
                         pieceSelected = false;
                     }
+                    
                 });
             }
         }
@@ -116,8 +120,27 @@ public class HelloFX extends Application{
     public static void main(String[] args) {
         launch(args);
     }
-    public static boolean movePiece(int selectedPieceX, int selectedPieceY, int moveToX, int moveToY){
-        return true;
+    public static boolean moveValidity(int selectedPieceX, int selectedPieceY, int moveToX, int moveToY){
+        boolean normalMovesCheck = false;
+        if (board[selectedPieceY][selectedPieceX].equals("⛀")){
+            normalMovesCheck = ((selectedPieceX == moveToX + 1 || selectedPieceX == moveToX - 1) && moveToY - selectedPieceY == -1);
+        } else if ((board[selectedPieceY][selectedPieceX].equals("⛂"))){
+            normalMovesCheck = ((selectedPieceX == moveToX + 1 || selectedPieceX == moveToX - 1) && moveToY - selectedPieceY == 1);
+        } else {
+            return false;
+        }
+        return board[moveToY][moveToX].equals("") && normalMovesCheck;
+    }
+    public static void movePiece(int selectedPieceX, int selectedPieceY, int moveToX, int moveToY){
+        // moving the piece on the stage itself
+        StackPane tileTemp = gridPaneTileArray[selectedPieceY][selectedPieceX];
+        System.out.println(tileTemp.getChildren().size());
+        gridPaneTileArray[moveToY][moveToX].getChildren().add(tileTemp.getChildren().get(tileTemp.getChildren().size()-1));
+
+        // Moving piece in 2d array
+        board[moveToY][moveToX] = board[selectedPieceX][selectedPieceY];
+        board[selectedPieceY][selectedPieceX] = "";
+
     }
 }
 
