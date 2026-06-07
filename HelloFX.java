@@ -42,12 +42,12 @@ public class HelloFX extends Application{
 
     
     
-    static int selectedPieceX, selectedPieceY;
+    static int selectedPieceCol, selectedPieceRow;
     static boolean pieceSelected;
 
     @Override
     public void start(Stage mainGameStage) {
-
+        System.out.println(board[0][1]);
         // main menu
         mainGameStage.setTitle("Checkers");
         Button start = new Button("Start Game");
@@ -79,27 +79,38 @@ public class HelloFX extends Application{
                 tile.getChildren().add(color);
                 // Adding a piece if there is one
                 //String pieceCode = board[col][row];
-                if (board[col][row].equals("⛀")){
+                if (board[row][col].equals("⛀")){
                     Circle piece = new Circle(25, Color.BLACK);
                     tile.getChildren().add(piece);
-                } else if (board[col][row].equals("⛂")){
+                } else if (board[row][col].equals("⛂")){
                     Circle piece = new Circle(25, Color.WHITE);
                     tile.getChildren().add(piece);
                 }
                 final int tileRow = row;
                 final int tileCol = col;
-                grid.add(tile, row, col);
-                gridPaneTileArray[col][row] = tile;
+                grid.add(tile, col, row);
+                gridPaneTileArray[row][col] = tile;
                 tile.setOnMousePressed(MouseEvent -> {
                     // Checking if a piece was already selected and if there is a piece actually there to select
-                    pieceSelected = false;
                     // the x and y are swapped somewhere
                     if (!pieceSelected && !board[tileRow][tileCol].equals("")) {
-                        selectedPieceX = tileRow;
-                        selectedPieceY = tileCol;
+                        selectedPieceCol = tileCol;
+                        selectedPieceRow = tileRow;
                         pieceSelected = true;
-                    } else if (moveValidity(selectedPieceX, selectedPieceY, tileRow, tileCol)){
-                            movePiece(selectedPieceX, selectedPieceY, tileRow, tileCol);
+                    } else if (moveValidity(selectedPieceCol, selectedPieceRow, tileCol, tileRow)){
+                            movePiece(selectedPieceCol, selectedPieceRow, tileCol, tileRow);
+                            String output = "";
+                            for (int x = 0; x < 8; x++){
+                                for (int y = 0; y < 8; y++){
+                                    if (board[x][y].equals("")){
+                                        output += "  □  ";
+                                    } else {
+                                        output += "  " + board[x][y] + "  ";
+                                    }
+                                }
+                                output += "\n";
+                            }
+                            System.out.println(output);
                             pieceSelected = false;
                     } else {
                         pieceSelected = false;
@@ -120,26 +131,72 @@ public class HelloFX extends Application{
     public static void main(String[] args) {
         launch(args);
     }
-    public static boolean moveValidity(int selectedPieceX, int selectedPieceY, int moveToX, int moveToY){
-        boolean normalMovesCheck = false;
-        if (board[selectedPieceY][selectedPieceX].equals("⛀")){
-            normalMovesCheck = ((selectedPieceX == moveToX + 1 || selectedPieceX == moveToX - 1) && moveToY - selectedPieceY == -1);
-        } else if ((board[selectedPieceY][selectedPieceX].equals("⛂"))){
-            normalMovesCheck = ((selectedPieceX == moveToX + 1 || selectedPieceX == moveToX - 1) && moveToY - selectedPieceY == 1);
+    
+    public static boolean moveValidity(int selectedPieceCol, int selectedPieceRow, int moveToCol, int moveToRow){
+        if (!board[moveToRow][moveToCol].equals("")){
+            return false;
+        }
+        if (capturingMove(selectedPieceCol, selectedPieceRow, moveToCol, moveToRow)){
+            return true;
+        }
+        if (normalMove(selectedPieceCol, selectedPieceRow, moveToCol, moveToRow)){
+            return true;
+        }
+        return false;
+
+    }
+        
+    
+    public static boolean normalMove(int selectedPieceCol, int selectedPieceRow, int moveToCol, int moveToRow){
+        if (board[selectedPieceRow][selectedPieceCol].equals("⛀")){
+            return (selectedPieceCol == moveToCol + 1 || selectedPieceCol == moveToCol - 1) && moveToRow - selectedPieceRow == 1;
+        } else if ((board[selectedPieceRow][selectedPieceCol].equals("⛂"))){
+            return (selectedPieceCol == moveToCol + 1 || selectedPieceCol == moveToCol - 1) && moveToRow - selectedPieceRow == -1;
         } else {
             return false;
         }
-        return board[moveToY][moveToX].equals("") && normalMovesCheck;
+        
     }
-    public static void movePiece(int selectedPieceX, int selectedPieceY, int moveToX, int moveToY){
+    // something wrong with logic here
+    public static boolean capturingMove(int selectedPieceCol, int selectedPieceRow, int moveToCol, int moveToRow){
+        String pieceMoving = board[selectedPieceRow][selectedPieceCol];
+        String pieceCapturee = board[(selectedPieceRow + moveToRow) / 2][(selectedPieceCol + moveToCol) / 2];
+        int distanceRow = Math.abs(moveToRow - selectedPieceRow);
+        int distanceCol = Math.abs(moveToCol - selectedPieceCol);
+
+        if (pieceCapturee.equals("")){
+            return false;
+        }
+
+        if (distanceCol != 2 || distanceRow != 2){
+            return false;
+        }
+
+        if (pieceMoving.equals("⛀") && moveToRow - selectedPieceRow != 2){
+            return false;
+        } else if (pieceMoving.equals("⛂") && moveToRow - selectedPieceRow != -2){
+            return false;
+        }
+        //pieceMoving.equals("⛂") && 
+        
+        if (pieceMoving.equals("⛀") && pieceMoving.equals(pieceCapturee)
+         || pieceMoving.equals("⛂") && pieceMoving.equals(pieceCapturee)){
+            return false;
+        }
+        return true;
+        
+    }
+
+    public static void movePiece(int selectedPieceCol, int selectedPieceRow, int moveToCol, int moveToRow){
         // moving the piece on the stage itself
-        StackPane tileTemp = gridPaneTileArray[selectedPieceY][selectedPieceX];
-        System.out.println(tileTemp.getChildren().size());
-        gridPaneTileArray[moveToY][moveToX].getChildren().add(tileTemp.getChildren().get(tileTemp.getChildren().size()-1));
+        StackPane tileSelected = gridPaneTileArray[selectedPieceRow][selectedPieceCol];
+        System.out.println(tileSelected.getChildren().size());
+        gridPaneTileArray[moveToRow][moveToCol].getChildren().add(tileSelected.getChildren().get(tileSelected.getChildren().size() - 1));
+        //gridPaneTileArray[selectedPieceRow][selectedPieceCol].getChildren().remove(tileTemp.getChildren().size()-1);
 
         // Moving piece in 2d array
-        board[moveToY][moveToX] = board[selectedPieceX][selectedPieceY];
-        board[selectedPieceY][selectedPieceX] = "";
+        board[moveToRow][moveToCol] = board[selectedPieceRow][selectedPieceCol];
+        board[selectedPieceRow][selectedPieceCol] = "";
 
     }
 }
