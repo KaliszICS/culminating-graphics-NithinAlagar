@@ -19,15 +19,13 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
-import javafx.event.EventHandler;
-import javafx.event.ActionEvent;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.input.MouseEvent;
 
 
 public class HelloFX extends Application{
+    // setting global variables
     static String[][] board = {
             {"", "⛀", "", "⛀", "", "⛀", "", "⛀"},
             {"⛀", "", "⛀", "", "⛀", "", "⛀", ""},
@@ -39,11 +37,10 @@ public class HelloFX extends Application{
             {"⛂", "", "⛂", "", "⛂", "", "⛂", ""}
         };
     static StackPane[][] gridPaneTileArray = new StackPane[8][8];
-
-    
-    
     static int selectedPieceCol, selectedPieceRow;
-    static boolean pieceSelected;
+    boolean pieceSelected;
+    // a true value means that it's white to move, a false value means it's black's move
+    static boolean playerTurn = true;
 
     @Override
     public void start(Stage mainGameStage) {
@@ -51,8 +48,6 @@ public class HelloFX extends Application{
         // main menu
         mainGameStage.setTitle("Checkers");
         Button start = new Button("Start Game");
-
-
         Label gameDescription1 = new Label("Welcome to Pass-The-Device two player checkers!");
         Label gameDescription2 = new Label("Click Start to play.");
         BorderPane startMenuLayout = new BorderPane();
@@ -62,7 +57,7 @@ public class HelloFX extends Application{
         Scene startMenu, mainGame, endScreen;
         // Label playerTurn = new Label(playerToMove + " to move.");
         // mainGame = new Scene(playerToMove, 500, 500);
-        startMenu = new Scene(startMenuLayout, 500, 500);
+        startMenu = new Scene(startMenuLayout, 600, 600);
         mainGameStage.setScene(startMenu);
         mainGameStage.show();
 
@@ -93,12 +88,17 @@ public class HelloFX extends Application{
                 tile.setOnMousePressed(MouseEvent -> {
                     // Checking if a piece was already selected and if there is a piece actually there to select
                     // the x and y are swapped somewhere
-                    if (!pieceSelected && !board[tileRow][tileCol].equals("")) {
+                    if (!pieceSelected && !board[tileRow][tileCol].equals("") && playerTurn && board[tileRow][tileCol].equals("⛂")) {
                         selectedPieceCol = tileCol;
                         selectedPieceRow = tileRow;
                         pieceSelected = true;
-                    } else if (moveValidity(selectedPieceCol, selectedPieceRow, tileCol, tileRow)){
+                    } else if (!pieceSelected && !board[tileRow][tileCol].equals("") && !playerTurn && board[tileRow][tileCol].equals("⛀")){
+                        selectedPieceCol = tileCol;
+                        selectedPieceRow = tileRow;
+                        pieceSelected = true;
+                    } else if (moveValidity(selectedPieceCol, selectedPieceRow, tileCol, tileRow) && pieceSelected){
                             movePiece(selectedPieceCol, selectedPieceRow, tileCol, tileRow);
+                            playerTurn = !playerTurn;
                             String output = "";
                             for (int x = 0; x < 8; x++){
                                 for (int y = 0; y < 8; y++){
@@ -119,7 +119,7 @@ public class HelloFX extends Application{
                 });
             }
         }
-        mainGame = new Scene(grid, 700, 700);
+        mainGame = new Scene(grid, 600, 600);
         start.setOnAction(event -> {
             System.out.println("but...");
 
@@ -157,6 +157,7 @@ public class HelloFX extends Application{
         }
         
     }
+
     // something wrong with logic here
     public static boolean capturingMove(int selectedPieceCol, int selectedPieceRow, int moveToCol, int moveToRow){
         String pieceMoving = board[selectedPieceRow][selectedPieceCol];
@@ -188,15 +189,26 @@ public class HelloFX extends Application{
     }
 
     public static void movePiece(int selectedPieceCol, int selectedPieceRow, int moveToCol, int moveToRow){
-        // moving the piece on the stage itself
         StackPane tileSelected = gridPaneTileArray[selectedPieceRow][selectedPieceCol];
-        System.out.println(tileSelected.getChildren().size());
-        gridPaneTileArray[moveToRow][moveToCol].getChildren().add(tileSelected.getChildren().get(tileSelected.getChildren().size() - 1));
-        //gridPaneTileArray[selectedPieceRow][selectedPieceCol].getChildren().remove(tileTemp.getChildren().size()-1);
+        StackPane tileMoveTo = gridPaneTileArray[moveToRow][moveToCol];
+        if (normalMove(selectedPieceCol, selectedPieceRow, moveToCol, moveToRow)){
+            // moving the piece on the stage itself
+            tileMoveTo.getChildren().add(tileSelected.getChildren().get(tileSelected.getChildren().size() - 1));
 
-        // Moving piece in 2d array
-        board[moveToRow][moveToCol] = board[selectedPieceRow][selectedPieceCol];
-        board[selectedPieceRow][selectedPieceCol] = "";
+            // Moving piece in 2d array
+            board[moveToRow][moveToCol] = board[selectedPieceRow][selectedPieceCol];
+            board[selectedPieceRow][selectedPieceCol] = "";
+
+        } else if (capturingMove(selectedPieceCol, selectedPieceRow, moveToCol, moveToRow)){
+            int captureePiece = gridPaneTileArray[(selectedPieceRow + moveToRow)/2][(selectedPieceCol + moveToCol)/2].getChildren().size() - 1;
+            // moving the piece on the stage itself
+            tileMoveTo.getChildren().add(tileSelected.getChildren().get(tileSelected.getChildren().size() - 1));
+            gridPaneTileArray[(selectedPieceRow + moveToRow)/2][(selectedPieceCol + moveToCol)/2].getChildren().remove(captureePiece);
+            // Moving piece in 2d array
+            board[moveToRow][moveToCol] = board[selectedPieceRow][selectedPieceCol];
+            board[(selectedPieceRow + moveToRow)/2][(selectedPieceCol + moveToCol)/2] = "";
+            board[selectedPieceRow][selectedPieceCol] = "";
+        }
 
     }
 }
