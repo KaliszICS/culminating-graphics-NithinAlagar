@@ -25,7 +25,7 @@ import javafx.scene.layout.BorderPane;
 
 
 public class HelloFX extends Application{
-    // setting global variables
+    // Setting global variables
     static String[][] board = {
             {"", "⛀", "", "⛀", "", "⛀", "", "⛀"},
             {"⛀", "", "⛀", "", "⛀", "", "⛀", ""},
@@ -39,8 +39,9 @@ public class HelloFX extends Application{
     static StackPane[][] gridPaneTileArray = new StackPane[8][8];
     static int selectedPieceCol, selectedPieceRow;
     boolean pieceSelected;
-    // a true value means that it's white to move, a false value means it's black's move
+    // A true value means that it's white to move, a false value means it's black's move
     static boolean playerTurn = true;
+    static boolean continueCapture = false;
 
     @Override
     public void start(Stage mainGameStage) {
@@ -57,7 +58,7 @@ public class HelloFX extends Application{
         Scene startMenu, mainGame, endScreen;
         // Label playerTurn = new Label(playerToMove + " to move.");
         // mainGame = new Scene(playerToMove, 500, 500);
-        startMenu = new Scene(startMenuLayout, 600, 600);
+        startMenu = new Scene(startMenuLayout, 600, 500);
         mainGameStage.setScene(startMenu);
         mainGameStage.show();
 
@@ -80,26 +81,61 @@ public class HelloFX extends Application{
                 } else if (board[row][col].equals("⛂")){
                     Circle piece = new Circle(25, Color.WHITE);
                     tile.getChildren().add(piece);
+                } else if (board[row][col].equals("⛁")){
+                    Circle piece = new Circle(25, Color.WHITE);
+                    tile.getChildren().add(piece);
+                    piece.setStroke(Color.GOLD);
+                    piece.setStrokeWidth(5);
+                    tile.getChildren().add(piece);
+                } else if (board[row][col].equals("⛃")){
+                    Circle piece = new Circle(25, Color.WHITE);
+                    tile.getChildren().add(piece);
+                    piece.setStroke(Color.GOLD);
+                    piece.setStrokeWidth(5);
+                    tile.getChildren().add(piece);
                 }
                 final int tileRow = row;
                 final int tileCol = col;
                 grid.add(tile, col, row);
                 gridPaneTileArray[row][col] = tile;
                 tile.setOnMousePressed(MouseEvent -> {
-                    // Checking if a piece was already selected and if there is a piece actually there to select
-                    // the x and y are swapped somewhere
-                    if (!pieceSelected && !board[tileRow][tileCol].equals("") && playerTurn && board[tileRow][tileCol].equals("⛂")) {
-                        selectedPieceCol = tileCol;
+                    String clickedPiece = board[tileRow][tileCol];
+                    // Checking if there is a multi jump in play and forcing the multi jump to be played
+                    if (capturingMove(selectedPieceCol, selectedPieceRow, tileCol, tileRow) && continueCapture) {
+                        movePiece(selectedPieceCol, selectedPieceRow, tileCol, tileRow);
                         selectedPieceRow = tileRow;
-                        pieceSelected = true;
-                    } else if (!pieceSelected && !board[tileRow][tileCol].equals("") && !playerTurn && board[tileRow][tileCol].equals("⛀")){
                         selectedPieceCol = tileCol;
-                        selectedPieceRow = tileRow;
-                        pieceSelected = true;
-                    } else if (moveValidity(selectedPieceCol, selectedPieceRow, tileCol, tileRow) && pieceSelected){
-                            movePiece(selectedPieceCol, selectedPieceRow, tileCol, tileRow);
+                        if (!hasCapture(tileRow, tileCol)) {
+                            continueCapture = false;
                             playerTurn = !playerTurn;
-                            String output = "";
+                            pieceSelected = false;
+                        }
+                        return;
+                    }
+                    // checking if the a piece that just made a capture that moved to the square it's already on and canceling the mouseEvent if true
+                    if (continueCapture && tileRow == selectedPieceRow && tileCol == selectedPieceCol) {
+                        return;
+                    }
+                    // Checking if a piece was already selected and if there is a piece actually there to select
+                    if (!pieceSelected && !clickedPiece.equals("") && playerTurn && clickedPiece.equals("⛂")) {
+                        selectedPieceCol = tileCol;
+                        selectedPieceRow = tileRow;
+                        pieceSelected = true;
+                    } else if (!pieceSelected && !clickedPiece.equals("") && !playerTurn && clickedPiece.equals("⛀")){
+                        selectedPieceCol = tileCol;
+                        selectedPieceRow = tileRow;
+                        pieceSelected = true;
+                    } else if (playerTurn && clickedPiece.equals("⛂") && !continueCapture){
+                        selectedPieceRow = tileRow;
+                        selectedPieceCol = tileCol;
+                        pieceSelected = true;
+                    } else if (!playerTurn && clickedPiece.equals("⛀") && !continueCapture){
+                        selectedPieceRow = tileRow;
+                        selectedPieceCol = tileCol;
+                        pieceSelected = true;
+                    } else if (pieceSelected && moveValidity(selectedPieceCol, selectedPieceRow, tileCol, tileRow)) {
+                        movePiece(selectedPieceCol, selectedPieceRow, tileCol, tileRow);
+                        String output = "";
                             for (int x = 0; x < 8; x++){
                                 for (int y = 0; y < 8; y++){
                                     if (board[x][y].equals("")){
@@ -111,11 +147,11 @@ public class HelloFX extends Application{
                                 output += "\n";
                             }
                             System.out.println(output);
+                        if (!continueCapture) {
+                            playerTurn = !playerTurn;
                             pieceSelected = false;
-                    } else {
-                        pieceSelected = false;
-                    }
-                    
+                        }
+                    } 
                 });
             }
         }
@@ -132,18 +168,12 @@ public class HelloFX extends Application{
         launch(args);
     }
     
-    public static boolean moveValidity(int selectedPieceCol, int selectedPieceRow, int moveToCol, int moveToRow){
-        if (!board[moveToRow][moveToCol].equals("")){
+    public static boolean moveValidity(int selectedPieceCol, int selectedPieceRow, int moveToCol, int moveToRow) {
+        if (!board[moveToRow][moveToCol].equals("")) {
             return false;
-        }
-        if (capturingMove(selectedPieceCol, selectedPieceRow, moveToCol, moveToRow)){
-            return true;
-        }
-        if (normalMove(selectedPieceCol, selectedPieceRow, moveToCol, moveToRow)){
-            return true;
-        }
-        return false;
+        } 
 
+        return normalMove(selectedPieceCol, selectedPieceRow, moveToCol, moveToRow) || capturingMove(selectedPieceCol, selectedPieceRow, moveToCol, moveToRow);
     }
         
     
@@ -160,16 +190,18 @@ public class HelloFX extends Application{
 
     // something wrong with logic here
     public static boolean capturingMove(int selectedPieceCol, int selectedPieceRow, int moveToCol, int moveToRow){
-        String pieceMoving = board[selectedPieceRow][selectedPieceCol];
-        String pieceCapturee = board[(selectedPieceRow + moveToRow) / 2][(selectedPieceCol + moveToCol) / 2];
-        int distanceRow = Math.abs(moveToRow - selectedPieceRow);
-        int distanceCol = Math.abs(moveToCol - selectedPieceCol);
-
-        if (pieceCapturee.equals("")){
+        if (moveToRow < 0 || moveToRow > 7 ||
+            moveToCol < 0 || moveToCol > 7) {
             return false;
         }
-
-        if (distanceCol != 2 || distanceRow != 2){
+        String pieceMoving = board[selectedPieceRow][selectedPieceCol];
+        int distanceRow = Math.abs(moveToRow - selectedPieceRow);
+        int distanceCol = Math.abs(moveToCol - selectedPieceCol);
+        if (distanceCol != 2 || distanceRow != 2) {
+            return false;
+        }
+        String pieceCapturee = board[(selectedPieceRow + moveToRow) / 2][(selectedPieceCol + moveToCol) / 2];
+        if (pieceCapturee.equals("")){
             return false;
         }
 
@@ -180,26 +212,24 @@ public class HelloFX extends Application{
         }
         //pieceMoving.equals("⛂") && 
         
-        if (pieceMoving.equals("⛀") && pieceMoving.equals(pieceCapturee)
-         || pieceMoving.equals("⛂") && pieceMoving.equals(pieceCapturee)){
+        if (pieceMoving.equals(pieceCapturee)){
             return false;
         }
         return true;
-        
     }
 
     public static void movePiece(int selectedPieceCol, int selectedPieceRow, int moveToCol, int moveToRow){
         StackPane tileSelected = gridPaneTileArray[selectedPieceRow][selectedPieceCol];
         StackPane tileMoveTo = gridPaneTileArray[moveToRow][moveToCol];
+        boolean captureeTaken = capturingMove(selectedPieceCol, selectedPieceRow, moveToCol, moveToRow);
         if (normalMove(selectedPieceCol, selectedPieceRow, moveToCol, moveToRow)){
             // moving the piece on the stage itself
             tileMoveTo.getChildren().add(tileSelected.getChildren().get(tileSelected.getChildren().size() - 1));
-
             // Moving piece in 2d array
             board[moveToRow][moveToCol] = board[selectedPieceRow][selectedPieceCol];
             board[selectedPieceRow][selectedPieceCol] = "";
 
-        } else if (capturingMove(selectedPieceCol, selectedPieceRow, moveToCol, moveToRow)){
+        } else if (captureeTaken){
             int captureePiece = gridPaneTileArray[(selectedPieceRow + moveToRow)/2][(selectedPieceCol + moveToCol)/2].getChildren().size() - 1;
             // moving the piece on the stage itself
             tileMoveTo.getChildren().add(tileSelected.getChildren().get(tileSelected.getChildren().size() - 1));
@@ -210,6 +240,35 @@ public class HelloFX extends Application{
             board[selectedPieceRow][selectedPieceCol] = "";
         }
 
+        if (board[moveToRow][moveToCol].equals("⛂") && moveToRow == 0) {
+            board[moveToRow][moveToCol] = "⛃";
+        } else if (board[moveToRow][moveToCol].equals("⛀") && moveToRow == 7) {
+            board[moveToRow][moveToCol] = "⛁";
+        }
+        // Checking if the piece that was just moved has an capturing and forcing an multi-jump to occur
+        if (captureeTaken && hasCapture(moveToRow, moveToCol)) {
+            continueCapture = true;
+        } else {
+            continueCapture = false;
+        }
+    }
+    // Helper Function(s)
+    // hasCapture is used to check if a piece has avalible captures
+    public static boolean hasCapture(int row, int col) {
+
+    String piece = board[row][col];
+
+    if (piece.equals("⛂")) {
+        return capturingMove(col, row, col - 2, row - 2)
+            || capturingMove(col, row, col + 2, row - 2);
+    }
+
+    if (piece.equals("⛀")) {
+        return capturingMove(col, row, col - 2, row + 2)
+            || capturingMove(col, row, col + 2, row + 2);
+    }
+
+    return false;
     }
 }
 
