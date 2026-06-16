@@ -1,0 +1,11 @@
+K(30%): 100
+I(30%): 85
+C(10%): 100
+A(30%): 85
+91%
+
+Game ends before last piece is taken if it is in a takeable spot.
+Double jumps seem to break the game.  You're checking your Boolean on button press, but when you go back, you don't have a piece selected at the correct coordinates (it is still using the old ones and all moves become invalid.
+You then get stuck in a loop and can't get out freezing the game unless you draw.
+
+I'd also suggest having some way of highlighting the square to show that a piece is selected to move.
